@@ -130,6 +130,22 @@ def drag_geometry(edge, start, dx, dy, min_w=MIN_W, min_h=MIN_H):
     return x, y, w, h
 
 
+def monitor_at(px, py, rects):
+    """Index of the monitor rect (x, y, w, h) containing the point, or None."""
+    for i, (mx, my, mw, mh) in enumerate(rects):
+        if mx <= px < mx + mw and my <= py < my + mh:
+            return i
+    return None
+
+
+def drop_margin(px, py, grab_x, grab_y, target):
+    """Margins on the target monitor that put the grabbed spot under the pointer.
+
+    (px, py) is the pointer in layout coordinates, (grab_x, grab_y) where the
+    window was grabbed (relative to the window), target the monitor rect."""
+    return int(px - target[0] - grab_x), int(py - target[1] - grab_y)
+
+
 _EDGE_SIDES = {
     "NORTH": {"top"}, "SOUTH": {"bottom"}, "EAST": {"right"}, "WEST": {"left"},
     "NORTH_WEST": {"top", "left"}, "NORTH_EAST": {"top", "right"},
@@ -644,12 +660,39 @@ class LyricsWindow(Gtk.Window):
 
     def _on_release(self, _w, ev):
         if ev.button == 1 and self._drag is not None:
-            self._drag = None
+            d, self._drag = self._drag, None
+            if d["sides"] is None:  # a move, not a resize
+                self._maybe_switch_monitor(*self._local(ev), d)
             return True
         return False
 
+    def _maybe_switch_monitor(self, lx, ly, d) -> None:
+        """Dropped with the pointer over another monitor: move the window there.
+
+        Done only on release, never mid-drag: re-creating the surface while the
+        button is held could lose the pointer grab."""
+        if self._monitor is None:
+            return
+        display = self.get_display()
+        monitors = [display.get_monitor(i) for i in range(display.get_n_monitors())]
+        rects = [(g.x, g.y, g.width, g.height) for g in (m.get_geometry() for m in monitors)]
+        cur = self._monitor.get_geometry()
+        # Pointer in layout coordinates: our monitor's origin + margins + position in window.
+        px, py = cur.x + self._geom[0] + lx, cur.y + self._geom[1] + ly
+        index = monitor_at(px, py, rects)
+        if index is None or monitors[index] == self._monitor:
+            return
+        grab_x = d["px"] - d["start"][0]
+        grab_y = d["py"] - d["start"][1]
+        x, y = drop_margin(px, py, grab_x, grab_y, rects[index])
+        self._monitor = monitors[index]
+        GtkLayerShell.set_monitor(self, self._monitor)
+        self._apply_geometry(x, y, self._geom[2], self._geom[3])  # clamps to the new monitor
+
     def _on_motion(self, _w, ev):
         lx, ly = self._local(ev)
+        if self._drag is not None and not (ev.state & Gdk.ModifierType.BUTTON1_MASK):
+            self._drag = None  # the release was lost somewhere: stop following the pointer
         if self._drag is not None:
             d = self._drag
             # The event is relative to where the surface was when it was sent:

@@ -1,7 +1,7 @@
 import unittest
 
 from lyrics_pip.ui import (MIN_H, MIN_W, clamp_margin, default_margin, drag_geometry,
-                           pick_monitor)
+                           drop_margin, monitor_at, pick_monitor)
 
 
 class ClampMarginTest(unittest.TestCase):
@@ -54,6 +54,22 @@ class DragGeometryTest(unittest.TestCase):
         self.assertEqual((w, x + w), (MIN_W, 100 + 380))
         _, _, _, h = drag_geometry({"bottom"}, self.START, 0, -1000)
         self.assertEqual(h, MIN_H)
+
+
+
+class MonitorSwitchTest(unittest.TestCase):
+    # Portrait LG on the left, 27" on the right (the layout this was built on).
+    RECTS = [(0, 0, 1080, 1920), (1080, 0, 2560, 1440)]
+
+    def test_monitor_at(self):
+        self.assertEqual(monitor_at(500, 1800, self.RECTS), 0)
+        self.assertEqual(monitor_at(1080, 0, self.RECTS), 1)  # left edge belongs to it
+        self.assertEqual(monitor_at(3000, 1500, self.RECTS), None)  # below the 27"
+
+    def test_drop_keeps_grab_point_under_pointer(self):
+        # Grabbed 50 px right / 10 px down from the window corner, dropped at (300, 400).
+        self.assertEqual(drop_margin(300, 400, 50, 10, self.RECTS[0]), (250, 390))
+        self.assertEqual(drop_margin(1500, 200, 50, 10, self.RECTS[1]), (370, 190))
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ Putar lagu di YouTube Music, lalu liriknya muncul di jendela.
 | Aksi | Cara |
 |------|------|
 | Pindahkan jendela | seret di mana saja |
+| Pindah monitor | seret lalu lepas dengan kursor di monitor lain |
 | Ubah ukuran | seret tepi atau sudut jendela |
 | Atur transparansi | scroll mouse di baris judul (atau `Ctrl` + scroll di mana saja) |
 | Tutup | tombol `×` di pojok |
@@ -63,7 +64,8 @@ Geser jendela dari mana saja, ubah ukurannya dari tepi atau sudut. Jendela tidak
 ```
 
 - `x`/`y` dihitung dari pojok kiri atas **monitor** tempat jendela berada (bukan seluruh layar), dan `monitor` berisi nama model monitor itu.
-- Jendela tidak bisa diseret ke monitor lain. Untuk pindah monitor, ganti `monitor` dengan nama model lain (lihat contoh nama di file config setelah aplikasi ditutup), lalu buka lagi.
+- **Pindah monitor:** seret jendela ke arah monitor lain. Selama diseret, jendela berhenti di tepi monitornya. Lepas tombol mouse saat kursor sudah di monitor lain, dan jendela pindah ke sana dengan titik yang Anda pegang tetap di bawah kursor. Pindahnya sengaja dilakukan saat tombol dilepas, bukan di tengah seret, karena compositor membuat ulang jendelanya saat pindah monitor. Kalau itu terjadi saat tombol masih ditahan, seretnya bisa kacau.
+- Melepas tombol setelah mengubah ukuran (dari tepi atau sudut) tidak memindahkan monitor.
 - Ukuran bawaan 380 × 300, minimal 200 × 120. Posisi bawaan dekat pojok kanan atas monitor utama (kalau tidak ada monitor utama, monitor terbesar).
 - Kalau monitor yang tersimpan tidak tersambung, atau dicabut saat aplikasi berjalan, jendela pindah ke monitor lain di posisi bawaan.
 - **Reset ke bawaan:** tutup aplikasi lalu hapus `~/.config/lyrics-pip-wayland/config.json`.
