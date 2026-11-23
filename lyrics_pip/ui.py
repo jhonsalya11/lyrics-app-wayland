@@ -658,11 +658,24 @@ class LyricsWindow(Gtk.Window):
             self.begin_move_drag(ev.button, int(ev.x_root), int(ev.y_root), ev.time)
         return True
 
+    def _drag_to(self, d, lx, ly) -> None:
+        """Follow the pointer.
+
+        While the button is held, COSMIC reports the pointer relative to where the
+        surface was when the drag started, not where we have moved it since. So the
+        pointer in monitor coordinates is the start position plus the event position.
+        (Adding the current margins instead counts every step twice, and the window
+        runs away from the pointer.)"""
+        x0, y0 = d["start"][0], d["start"][1]
+        dx, dy = int(x0 + lx - d["px"]), int(y0 + ly - d["py"])
+        self._apply_geometry(*drag_geometry(d["sides"], d["start"], dx, dy))
+
     def _on_release(self, _w, ev):
         if ev.button == 1 and self._drag is not None:
             d, self._drag = self._drag, None
+            lx, ly = self._local(ev)
             if d["sides"] is None:  # a move, not a resize
-                self._maybe_switch_monitor(*self._local(ev), d)
+                self._maybe_switch_monitor(lx, ly, d)
             return True
         return False
 
@@ -677,8 +690,9 @@ class LyricsWindow(Gtk.Window):
         monitors = [display.get_monitor(i) for i in range(display.get_n_monitors())]
         rects = [(g.x, g.y, g.width, g.height) for g in (m.get_geometry() for m in monitors)]
         cur = self._monitor.get_geometry()
-        # Pointer in layout coordinates: our monitor's origin + margins + position in window.
-        px, py = cur.x + self._geom[0] + lx, cur.y + self._geom[1] + ly
+        # Pointer in layout coordinates: monitor origin + where the drag started
+        # (see _drag_to) + position in the event.
+        px, py = cur.x + d["start"][0] + lx, cur.y + d["start"][1] + ly
         index = monitor_at(px, py, rects)
         if index is None or monitors[index] == self._monitor:
             return
@@ -694,12 +708,7 @@ class LyricsWindow(Gtk.Window):
         if self._drag is not None and not (ev.state & Gdk.ModifierType.BUTTON1_MASK):
             self._drag = None  # the release was lost somewhere: stop following the pointer
         if self._drag is not None:
-            d = self._drag
-            # The event is relative to where the surface was when it was sent:
-            # add the margins currently applied to get monitor coordinates.
-            px, py = self._geom[0] + lx, self._geom[1] + ly
-            self._apply_geometry(*drag_geometry(
-                d["sides"], d["start"], int(px - d["px"]), int(py - d["py"])))
+            self._drag_to(self._drag, lx, ly)
             return True
         edge = self._edge_at(lx, ly)
         win = self.get_window()
