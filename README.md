@@ -1,166 +1,171 @@
 # Lyrics PiP (Wayland)
 
-Jendela lirik kecil yang selalu di atas jendela lain (seperti picture-in-picture) untuk lagu yang sedang diputar di **YouTube Music di Firefox**. Lirik tersinkron: baris yang sedang dinyanyikan disorot dan di-scroll otomatis.
+**English** | [Bahasa Indonesia](README.id.md)
 
-Versi ini untuk **Pop!_OS 24.04 dengan desktop COSMIC (Wayland)**. Turunan dari `lyrics-app` (versi XFCE/X11). Tetap ringan: Python + GTK3, tanpa paket pip.
+A small lyrics window that stays on top of other windows (like picture-in-picture) for the song playing in **YouTube Music in Firefox**. Lyrics are synced: the line being sung is highlighted and scrolled into view automatically.
 
-### Beda dengan versi X11
+This version is for **Pop!_OS 24.04 with the COSMIC desktop (Wayland)**. It is derived from `lyrics-app` (the XFCE/X11 version). It stays lightweight: Python + GTK3, no pip packages.
 
-Di Wayland, aplikasi biasa tidak boleh memilih posisinya sendiri, memaksa diri selalu di atas, atau tampil di semua workspace. Karena itu jendela lirik dibuat sebagai **layer surface** (protokol `wlr-layer-shell`, lewat `gtk-layer-shell`), mekanisme yang juga dipakai panel COSMIC:
+> The app's interface (buttons and messages) is in Indonesian. Button names are given below with an English translation.
 
-- Jendela ada di lapisan *overlay*: selalu di atas jendela lain (termasuk video layar penuh) dan tampil di semua workspace.
-- Fitur seret dan ubah ukuran dibuat sendiri di aplikasi, karena compositor tidak menyediakannya untuk layer surface.
-- Transparansi diatur lewat warna latar dan isi, karena di Wayland jendela tidak bisa diberi opacity.
-- Saat jendela tidak fokus, Wayland tidak memberi tahu status tombol `Ctrl`. Karena itu transparansi juga bisa diatur dengan scroll di baris judul.
-- Kalau `gtk-layer-shell` tidak terpasang, aplikasi tetap jalan sebagai jendela biasa (tidak selalu di atas) dan memberi peringatan di terminal.
+### Differences from the X11 version
 
-## Cara kerja
+On Wayland, regular applications are not allowed to choose their own position, force themselves on top, or appear on every workspace. So the lyrics window is a **layer surface** (the `wlr-layer-shell` protocol, via `gtk-layer-shell`), the same mechanism the COSMIC panel uses:
 
-- **Deteksi lagu:** membaca MPRIS lewat D-Bus (`Gio`). Firefox melaporkan judul, artis, durasi, dan posisi lagu, jadi tidak perlu ekstensi browser atau scraping.
-- **Lirik:** diambil dari [LRCLIB](https://lrclib.net) (gratis, tanpa API key). Kalau lirik bertimestamp tidak ada, ditampilkan lirik biasa tanpa sorotan.
-- **Cache:** hasil disimpan di `~/.cache/lyrics-pip/`.
+- The window lives on the *overlay* layer: always above other windows (including fullscreen video) and visible on every workspace.
+- Dragging and resizing are implemented by the app itself, because the compositor does not provide them for layer surfaces.
+- Transparency is applied to the background and contents, because Wayland windows cannot be given an opacity.
+- Wayland does not report the `Ctrl` key state to an unfocused window, so transparency can also be adjusted by scrolling over the title row.
+- If `gtk-layer-shell` is not installed, the app still runs as a normal window (not always on top) and prints a warning in the terminal.
 
-## Kebutuhan
+## How it works
 
-- Pop!_OS 24.04 / COSMIC (Wayland), atau compositor Wayland lain yang mendukung `wlr-layer-shell` (sway, Hyprland, KDE)
-- Python 3.12+ dengan PyGObject dan GTK 3 (`python3-gi`, `gir1.2-gtk-3.0`)
-- `gtk-layer-shell` untuk GTK3:
+- **Song detection:** reads MPRIS over D-Bus (`Gio`). Firefox reports the title, artist, duration, and playback position, so no browser extension or scraping is needed.
+- **Lyrics:** fetched from [LRCLIB](https://lrclib.net) (free, no API key). If no timestamped lyrics exist, plain lyrics are shown without highlighting.
+- **Cache:** results are stored in `~/.cache/lyrics-pip-wayland/`.
+
+## Requirements
+
+- Pop!_OS 24.04 / COSMIC (Wayland), or another Wayland compositor that supports `wlr-layer-shell` (sway, Hyprland, KDE)
+- Python 3.12+ with PyGObject and GTK 3 (`python3-gi`, `gir1.2-gtk-3.0`)
+- `gtk-layer-shell` for GTK3:
 
   ```bash
   sudo apt install gir1.2-gtklayershell-0.1
   ```
-- Firefox yang memutar YouTube Music
+- Firefox playing YouTube Music
 
-## Menjalankan
+## Running
 
 ```bash
 ./lyrics-pip
 ```
 
-Putar lagu di YouTube Music, lalu liriknya muncul di jendela.
+Play a song in YouTube Music and its lyrics appear in the window.
 
-## Kontrol
+## Controls
 
-| Aksi | Cara |
-|------|------|
-| Pindahkan jendela | seret di mana saja |
-| Pindah monitor | seret lalu lepas dengan kursor di monitor lain |
-| Ubah ukuran | seret tepi atau sudut jendela |
-| Atur transparansi | scroll mouse di baris judul (atau `Ctrl` + scroll di mana saja) |
-| Tutup | tombol `×` di pojok |
+| Action | How |
+|--------|-----|
+| Move the window | drag anywhere |
+| Move to another monitor | drag, then release with the pointer on the other monitor |
+| Resize | drag an edge or corner |
+| Adjust transparency | scroll over the title row (or `Ctrl` + scroll anywhere) |
+| Close | the `×` button in the corner |
 
-Jendela selalu di atas jendela lain, tampil di semua workspace, tidak mengambil fokus keyboard, dan hanya bisa dibuka satu kali (membuka lagi saat sudah berjalan tidak melakukan apa-apa).
+The window is always on top, visible on every workspace, never takes keyboard focus, and only one instance can run (launching it again while it is running does nothing).
 
-## Pengaturan
+## Settings
 
-### Transparansi
-Scroll mouse di baris judul (bagian atas jendela). `Ctrl` + scroll di mana saja juga bisa, tapi di Wayland hanya saat jendela lirik sedang fokus (misalnya selama mode sinkron). Naik = lebih pekat, turun = lebih transparan, per langkah 5%, dalam rentang 0,3 sampai 1,0. Bawaannya 0,92. Nilainya diingat untuk pembukaan berikutnya.
+### Transparency
+Scroll over the title row (the top of the window). `Ctrl` + scroll anywhere also works, but on Wayland only while the lyrics window has focus (for example during sync mode). Up = more opaque, down = more transparent, in 5% steps, within 0.3 to 1.0. The default is 0.92. The value is remembered for next time.
 
-### Posisi dan ukuran
-Geser jendela dari mana saja, ubah ukurannya dari tepi atau sudut. Jendela tidak bisa keluar dari monitor. Nilainya disimpan saat jendela ditutup (lewat `×`, `Ctrl+C`, atau `kill`) di `~/.config/lyrics-pip-wayland/config.json`:
+### Position and size
+Drag the window from anywhere and resize it from an edge or corner. The window cannot leave its monitor. The values are saved when the window is closed (via `×`, `Ctrl+C`, or `kill`) to `~/.config/lyrics-pip-wayland/config.json`:
 
 ```json
 {"x": 2140, "y": 60, "w": 380, "h": 300, "opacity": 0.92, "sync_offset": 0.3, "monitor": "H27G30Q"}
 ```
 
-- `x`/`y` dihitung dari pojok kiri atas **monitor** tempat jendela berada (bukan seluruh layar), dan `monitor` berisi nama model monitor itu.
-- **Pindah monitor:** seret jendela ke arah monitor lain. Selama diseret, jendela berhenti di tepi monitornya. Lepas tombol mouse saat kursor sudah di monitor lain, dan jendela pindah ke sana dengan titik yang Anda pegang tetap di bawah kursor. Pindahnya sengaja dilakukan saat tombol dilepas, bukan di tengah seret, karena compositor membuat ulang jendelanya saat pindah monitor. Kalau itu terjadi saat tombol masih ditahan, seretnya bisa kacau.
-- Melepas tombol setelah mengubah ukuran (dari tepi atau sudut) tidak memindahkan monitor.
-- Ukuran bawaan 380 × 300, minimal 200 × 120. Posisi bawaan dekat pojok kanan atas monitor utama (kalau tidak ada monitor utama, monitor terbesar).
-- Kalau monitor yang tersimpan tidak tersambung, atau dicabut saat aplikasi berjalan, jendela pindah ke monitor lain di posisi bawaan.
-- **Reset ke bawaan:** tutup aplikasi lalu hapus `~/.config/lyrics-pip-wayland/config.json`.
-- Mengedit file ini sambil aplikasi berjalan tidak ada gunanya, karena akan ditimpa saat aplikasi ditutup. Tutup aplikasi dulu.
+- `x`/`y` are measured from the top-left corner of the **monitor** the window is on (not the whole desktop), and `monitor` holds that monitor's model name.
+- **Moving to another monitor:** drag the window toward the other monitor. While dragging, the window stops at the edge of its monitor. Release the mouse button once the pointer is on the other monitor, and the window moves there, keeping the spot you grabbed under the pointer. The move deliberately happens on release, not mid-drag, because the compositor re-creates the window when it changes monitor. If that happened while the button was still held, the drag could break.
+- Releasing the button after a resize (from an edge or corner) does not change monitor.
+- Default size is 380 × 300, minimum 200 × 120. The default position is near the top-right corner of the primary monitor (or the largest monitor if there is no primary).
+- If the saved monitor is not connected, or is unplugged while the app runs, the window moves to another monitor at the default position.
+- **Reset to defaults:** close the app and delete `~/.config/lyrics-pip-wayland/config.json`.
+- Editing this file while the app is running has no effect, because it is overwritten when the app closes. Close the app first.
 
-### Tampilan (font, warna)
-Belum ada pengaturan lewat file. Ubah konstanta `CSS` di `lyrics_pip/ui.py`:
+### Appearance (font, colors)
+There is no settings file for this yet. Edit the `CSS` constant in `lyrics_pip/ui.py`:
 
-| Selector | Mengatur |
+| Selector | Controls |
 |----------|----------|
-| `window.lyrics` | warna latar jendela dan sudut membulat |
-| `.line` | baris lirik biasa (warna, ukuran font) |
-| `.line.active` | baris yang sedang dinyanyikan (bawaan putih, tebal, 15pt) |
-| `.title` | judul dan artis di bagian atas |
+| `window.lyrics` | rounded corners (the background color is `BG_RGB` in the same file) |
+| `.line` | regular lyric lines (color, font size) |
+| `.line.active` | the line being sung (default white, bold, 15pt) |
+| `.title` | the title and artist at the top |
 
-Restart aplikasi setelah mengubahnya.
+Restart the app after changing it.
 
-### Cache lirik
-Disimpan di `~/.cache/lyrics-pip-wayland/`. Hapus folder itu untuk memaksa semua lirik diunduh ulang, misalnya kalau lirik sebuah lagu salah atau sudah diperbarui di LRCLIB. Lagu yang tidak ditemukan hanya di-cache 1 jam, lalu dicoba lagi.
+### Lyrics cache
+Stored in `~/.cache/lyrics-pip-wayland/`. Delete that folder to force all lyrics to be downloaded again, for example if a song's lyrics are wrong or have been updated on LRCLIB. Songs that were not found are only cached for 1 hour, then retried.
 
-### Entri menu aplikasi (opsional)
-Supaya bisa dibuka dari menu aplikasi COSMIC tanpa terminal, buat `~/.local/share/applications/lyrics-pip.desktop` (ganti path sesuai lokasi proyek Anda):
+### Application menu entry (optional)
+To open the app from the COSMIC application launcher without a terminal, create `~/.local/share/applications/lyrics-pip.desktop` (adjust the path to where the project lives):
 
 ```ini
 [Desktop Entry]
 Type=Application
 Name=Lyrics PiP
-Comment=Lirik mengambang untuk lagu YouTube Music di Firefox
-Exec=/home/jhonsalya/Documents/Projects/lyrics-app-wayland/lyrics-pip
+Comment=Floating lyrics for YouTube Music songs in Firefox
+Exec=/path/to/lyrics-app-wayland/lyrics-pip
 Icon=multimedia-audio-player
 Terminal=false
 Categories=AudioVideo;Audio;Player;
 ```
 
-Untuk menyala otomatis saat login, salin file yang sama ke `~/.config/autostart/`.
+To start it automatically at login, copy the same file to `~/.config/autostart/`.
 
-## Lirik pribadi
+## Custom lyrics
 
-Untuk lagu yang tidak ditemukan di LRCLIB, atau yang liriknya salah, Anda bisa menempel lirik sendiri.
+For songs that are not on LRCLIB, or whose lyrics are wrong, you can paste your own.
 
-- **Tambah lirik:** saat muncul "Lirik tidak ditemukan", klik tombol **Tambah lirik**, tempel teksnya, klik **Simpan**. Lirik langsung tampil.
-- **Ubah lirik:** tombol **✎** di header (muncul saat ada lagu) membuka kotak tempel. Kalau lagu itu sudah punya lirik pribadi, kotaknya terisi lirik tersebut.
-- **Hapus lirik pribadi:** kosongkan kotak lalu **Simpan**. Aplikasi kembali memakai lirik dari LRCLIB.
-- **Muat ulang:** tombol **⟳** di header menghapus cache lagu yang sedang diputar dan mengambilnya lagi dari awal (misalnya setelah liriknya ditambahkan ke LRCLIB).
+- **Add lyrics:** when "Lirik tidak ditemukan" (lyrics not found) appears, click **Tambah lirik** (add lyrics), paste the text, and click **Simpan** (save). The lyrics are shown right away.
+- **Edit lyrics:** the **✎** button in the header (shown while a song is playing) opens the paste box. If the song already has custom lyrics, the box is pre-filled with them.
+- **Remove custom lyrics:** empty the box and click **Simpan**. The app goes back to the lyrics from LRCLIB.
+- **Reload:** the **⟳** button in the header clears the cache for the current song and fetches it again from scratch (for example after its lyrics were added to LRCLIB).
 
-Teks boleh berupa lirik biasa (tampil tanpa sorotan) atau format LRC seperti `[00:12.50] baris lirik` (baris aktif tersorot dan mengikuti lagu). Formatnya dikenali otomatis.
+The text can be plain lyrics (shown without highlighting) or LRC format such as `[00:12.50] lyric line` (the active line is highlighted and follows the song). The format is detected automatically.
 
-Lirik pribadi disimpan sebagai file di folder `lyrics/` di dalam proyek, bernama `Artis - Judul.lrc` atau `Artis - Judul.txt`. Anda juga bisa menaruh file di sana secara manual. File pribadi selalu dipakai lebih dulu daripada LRCLIB.
+Custom lyrics are saved as files in the `lyrics/` folder inside the project, named `Artist - Title.lrc` or `Artist - Title.txt`. You can also put files there by hand. Custom files always take priority over LRCLIB.
 
-> **Folder `lyrics/` sengaja di-ignore git dan tidak boleh di-commit.** Lirik lagu berhak cipta, dan repo ini Public. Kalau ingin mencadangkannya, pakai repo Private terpisah atau salin manual.
+> **The `lyrics/` folder is ignored by git on purpose and must not be committed.** Song lyrics are copyrighted, so keep them out of the repository, especially a public one. To back them up, use a separate private repository or copy them manually.
 
-## Sinkronisasi lirik (tap-sync)
+## Syncing lyrics (tap-sync)
 
-Kalau liriknya masih teks biasa (tanpa timestamp), Anda bisa menandai waktunya sendiri sambil mendengarkan lagu, lalu aplikasi menyimpannya sebagai `.lrc`.
+If the lyrics are plain text (no timestamps), you can mark the timing yourself while listening, and the app saves the result as `.lrc`.
 
-1. Tampilkan liriknya (tempel lewat **Tambah lirik** / **✎**, atau pakai lirik biasa dari LRCLIB). Tombol **⏱** muncul di header selama liriknya belum bertimestamp.
-2. Putar lagunya **dari awal**, lalu klik **⏱**.
-3. Saat sebuah baris dinyanyikan, **klik baris itu**, atau tekan **Spasi** untuk menandai baris yang sedang disorot (baris berikutnya yang belum bertanda). Baris yang sudah ditandai menampilkan timestamp-nya di depan.
-4. Salah menandai? **Klik ulang** barisnya untuk menimpa waktunya. Tidak ada tombol geser per baris.
-5. Setelah semua baris bertanda, klik **Simpan**. Hasilnya `Artis - Judul.lrc` di `lyrics/`, dan sorotan lirik langsung berjalan. **Batal** membuang semua tanda tanpa menyimpan.
+1. Show the lyrics (paste them via **Tambah lirik** / **✎**, or use plain lyrics from LRCLIB). The **⏱** button appears in the header while the lyrics have no timestamps.
+2. Play the song **from the beginning**, then click **⏱**.
+3. When a line is sung, **click that line**, or press **Space** to mark the highlighted line (the next unmarked line). Marked lines show their timestamp in front.
+4. Marked one wrong? **Click the line again** to overwrite its time. There are no per-line nudge buttons.
+5. Once every line is marked, click **Simpan** (save). The result is `Artist - Title.lrc` in `lyrics/`, and the highlighting starts working right away. **Batal** (cancel) discards all marks without saving.
 
-Catatan:
-- Baris kosong dilewati dan tidak ikut ditandai.
-- **Simpan** ditolak kalau urutan waktunya tidak naik (misalnya Anda mengklik ulang baris awal terlalu belakangan). Baris yang bermasalah ditandai merah dengan pesannya.
-- Saat Anda klik **⏱**, jendela lirik mengambil **semua** input keyboard supaya **Spasi** menandai baris (bukan menjeda lagu di Firefox). Selama mode sinkron Anda tidak bisa mengetik di aplikasi lain. Spasi yang ditahan dihitung satu kali. Saat mode sinkron berakhir (Simpan, Batal, atau lagu berganti), keyboard dilepas dan compositor mengembalikan fokus ke jendela sebelumnya. Kalau tidak kembali, klik sekali di jendela Firefox.
-- **Lagu berganti saat mode sinkron:** kalau semua baris sudah bertanda dan urutannya benar (misalnya lagu selesai sebelum sempat klik Simpan), hasilnya **otomatis disimpan** untuk lagu yang tadi disinkronkan. Kalau belum lengkap atau urutannya salah, tanda dibuang. Firefox yang macet sebentar atau perubahan durasi yang dilaporkan tidak membatalkan sesi.
-- **Kompensasi waktu reaksi:** timestamp = posisi lagu dikurangi `sync_offset` detik, karena Anda mengklik sedikit setelah baris mulai dinyanyikan. Atur di `~/.config/lyrics-pip/config.json` (bawaan `0.3`, rentang `0` sampai `2`; nilai tidak valid dianggap `0.3`). Kalau hasilnya konsisten terlalu awal, kurangi nilainya; kalau terlalu terlambat, tambah. Tutup aplikasi sebelum mengedit file ini.
+Notes:
+- Empty lines are skipped and are not marked.
+- **Simpan** is refused if the times are not increasing (for example if you re-clicked an early line too late). The offending line is highlighted in red with a message.
+- When you click **⏱**, the lyrics window takes **all** keyboard input so that **Space** marks lines (instead of pausing the song in Firefox). While sync mode is on you cannot type in other applications. Holding Space counts as one press. When sync mode ends (Simpan, Batal, or the song changes), the keyboard is released and the compositor returns focus to the previous window. If it does not, click the Firefox window once.
+- **Song changes during sync mode:** if every line is marked and the order is correct (for example the song ended before you clicked Simpan), the result is **saved automatically** for the song that was being synced. If it is incomplete or out of order, the marks are discarded. Firefox briefly stalling or reporting a different duration does not cancel the session.
+- **Reaction time compensation:** timestamp = song position minus `sync_offset` seconds, because you click slightly after a line starts being sung. Set it in `~/.config/lyrics-pip-wayland/config.json` (default `0.3`, range `0` to `2`; invalid values are treated as `0.3`). If results are consistently too early, lower the value; if too late, raise it. Close the app before editing this file.
 
-## Tes
+## Tests
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-## Struktur
+## Layout
 
 ```
 lyrics_pip/
-  lrc.py      parser LRC dan pencarian baris aktif
-  lyrics.py   klien LRCLIB (dengan fallback) dan cache disk
-  mpris.py    pembaca MPRIS dari Firefox
-  clock.py    penaksir posisi (Firefox hanya melaporkan detik bulat)
-  custom.py   lirik pribadi (folder lyrics/) dan urutan pencarian
-  syncer.py   logika tap-sync (penandaan waktu, validasi urutan, format .lrc)
-  ui.py       jendela GTK (layer-shell di Wayland, jendela biasa sebagai cadangan)
-  app.py      perangkai dan main()
-  instance.py penjaga instance tunggal (file lock)
-tests/        tes unittest
-docs/superpowers/   desain dan rencana pembuatan
+  lrc.py      LRC parser and active-line lookup
+  lyrics.py   LRCLIB client (with fallbacks) and disk cache
+  mpris.py    MPRIS reader for Firefox
+  clock.py    position estimator (Firefox only reports whole seconds)
+  custom.py   custom lyrics (lyrics/ folder) and lookup order
+  syncer.py   tap-sync logic (marking, order validation, .lrc output)
+  ui.py       GTK window (layer-shell on Wayland, normal window as fallback)
+  app.py      wiring and main()
+  instance.py single-instance guard (file lock)
+tests/        unittest tests
+docs/superpowers/   design and implementation plans (in Indonesian)
 ```
 
-## Batasan
+## Limitations
 
-- Hanya Firefox (bus MPRIS `org.mpris.MediaPlayer2.firefox*`).
-- Butuh compositor dengan `wlr-layer-shell`. GNOME (Mutter) tidak mendukungnya, jadi di GNOME jendela tidak bisa selalu di atas.
-- Kotak **Tambah lirik / ✎** adalah jendela biasa, jadi bisa tertutup jendela lirik kalau letaknya bertumpuk. Kotak itu dibuka di tengah layar.
-- Tidak semua lagu ada di LRCLIB. Lagu yang tidak ditemukan menampilkan "Lirik tidak ditemukan".
-- Pemakaian RAM dan CPU kira-kira sama dengan versi X11 (sekitar 58 MB, CPU sekitar 1%), tapi belum diukur ulang di COSMIC.
+- Firefox only (MPRIS bus `org.mpris.MediaPlayer2.firefox*`).
+- Requires a compositor with `wlr-layer-shell`. GNOME (Mutter) does not support it, so on GNOME the window cannot stay on top.
+- Dragging relies on how COSMIC reports pointer positions during a drag (relative to where the window was when the drag started). It has only been tested on COSMIC; other compositors may behave differently.
+- The **Tambah lirik / ✎** box is a normal window, so the lyrics window can cover it if they overlap. The box opens in the center of the screen.
+- Not every song is on LRCLIB. Songs that are not found show "Lirik tidak ditemukan".
+- RAM and CPU usage should be about the same as the X11 version (around 58 MB, about 1% CPU), but it has not been measured again on COSMIC.
